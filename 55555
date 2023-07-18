@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 20px);
+            grid-template-rows: repeat(10, 20px);
+            gap: 5px;
+        }
+        .cell {
+            width: 20px;
+            height: 20px;
+            background: #eee;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .cell[data-piece="1"] {
+            background: #3455f8;
+        }
+        .cell[data-piece="2"] {
+            background: #ff7994;
+        }
+    </style>
+</head>
+<body>
+    <h1>五子棋（儿童版）</h1>
+    <p>haku</p>
+    <div id="board"></div>
+    <button onclick="resetGame()">重新开始</button>
+    <script>
+        let board = Array(10).fill().map(() => Array(10).fill(0));
+        let BLACK = 1;
+        let WHITE = 2;
+
+        function checkWin(x, y, color) {
+            let directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]];
+            for(let d of directions) {
+                let i = x, j = y, count = 0;
+                while(i >= 0 && i < 10 && j >= 0 && j < 10 && board[i][j] === color) {
+                    count++;
+                    i += d[0];
+                    j += d[1];
+                }
+                if(count >= 5) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getEmptyPositions() {
+            let positions = [];
+            for(let i = 0; i < board.length; i++) {
+                for(let j = 0; j < board[i].length; j++) {
+                    if(board[i][j] === 0) {
+                        positions.push([i, j]);
+                    }
+                }
+            }
+            return positions;
+        }
+
+        function countPieces(x, y, color) {
+            let count = 0;
+            let directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]];
+            for(let d of directions) {
+                let i = x + d[0], j = y + d[1];
+                while(i >= 0 && i < 10 && j >= 0 && j < 10 && board[i][j] === color) {
+                    count++;
+                    i += d[0];
+                    j += d[1];
+                }
+            }
+            return count;
+        }
+
+        function computerMove() {
+            let positions = getEmptyPositions();
+            let winningMove = null;
+            let blockingMove = null;
+            let maxPiecesMove = null;
+            let maxPieces = -1;
+            for(let pos of positions) {
+                board[pos[0]][pos[1]] = WHITE;
+                if(checkWin(pos[0], pos[1], WHITE)) {
+                    winningMove = pos;
+                    break;
+                }
+                board[pos[0]][pos[1]] = BLACK;
+                if(checkWin(pos[0], pos[1], BLACK)) {
+                    blockingMove = pos;
+                }
+                let count = countPieces(pos[0], pos[1], WHITE);
+                if(count > maxPieces) {
+                    maxPieces = count;
+                    maxPiecesMove = pos;
+                }
+                board[pos[0]][pos[1]] = 0;
+            }
+            let movePos = winningMove || blockingMove || maxPiecesMove;
+            board[movePos[0]][movePos[1]] = WHITE;
+            document.getElementById(`${movePos[0]}-${movePos[1]}`).dataset.piece = WHITE;
+            if(checkWin(movePos[0], movePos[1], WHITE)) {
+                alert("你可真他妈菜啊");
+            }
+        }
+
+        function playerMove(e) {
+            let [i, j] = e.target.id.split('-').map(Number);
+            if(board[i][j] === 0) {
+                board[i][j] = BLACK;
+                e.target.dataset.piece = BLACK;
+                if(checkWin(i, j, BLACK)) {
+                    alert("游戏结束，玩家赢了！");
+                    return;
+                }
+                computerMove();
+            }
+        }
+
+        function resetGame() {
+            board = Array(10).fill().map(() => Array(10).fill(0));
+            let cells = document.getElementsByClassName('cell');
+            for(let cell of cells) {
+                cell.dataset.piece = '';
+            }
+            firstMove();
+        }
+
+        function firstMove() {
+            let center = Math.floor(board.length / 2);
+            board[center][center] = WHITE;
+            document.getElementById(`${center}-${center}`).dataset.piece = WHITE;
+        }
+
+        window.onload = function() {
+            let boardDiv = document.getElementById('board');
+            for(let i = 0; i < 10; i++) {
+                for(let j = 0; j < 10; j++) {
+                    let cell = document.createElement('div');
+                    cell.id = `${i}-${j}`;
+                    cell.className = 'cell';
+                    cell.addEventListener('click', playerMove);
+                    boardDiv.appendChild(cell);
+                }
+            }
+            firstMove();
+        }
+    </script>
+</body>
+</html>
